@@ -62033,3 +62033,10 @@ addr = 0x03007DCC
 mode = "thumb"
 name = "ReadFlash1_stack"
 note = "ReadFlashId stack-resident ReadFlash1 copy"
+
+# (Reverted: the WaitForVBlank interior-PC seeds REGRESSED throughput 68->55 fps.
+#  The spin was already native — interpreted_insns was ~1/frame, the bridge was a
+#  negligible per-frame resume hiccup that heals to the native goto-loop. Seeding
+#  split that tight loop into 5 dispatch-chained functions = binary-search per
+#  iteration = slower. Lesson: the 60% profile cost is the inherent NATIVE
+#  busy-wait, not the interpreter. See perf notes.)
