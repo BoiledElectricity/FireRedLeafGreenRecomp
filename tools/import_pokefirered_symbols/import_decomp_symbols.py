@@ -117,10 +117,16 @@ def parse_symbols(path: pathlib.Path):
 # the interpreter — which otherwise drops the SWI-in-IRQ drive-to-completion
 # fix and hangs WaitForVBlank. See project_fn_entry_hook_regression /
 # FireRed's firered.toml for the history.
-#   (buffer_symbol, source_symbol, default_mode)
+#   (buffer_symbol, source_symbol_candidates, default_mode)
+# source_symbol_candidates is a tuple tried in order — pret decomps disagree
+# on case/spelling for the IRQ entry: pokefirered/leafgreen export it as
+# `intr_main` (lowercase), pokeruby/sapphire/emerald as `IntrMain`. Both ship
+# the same `IntrMain_Buffer` IWRAM destination object, so only the source name
+# differs. Without the right source the IRQ dispatcher self-heals through the
+# interpreter on every interrupt (~1-2 bridges/frame) instead of being static.
 CODE_COPY_PAIRS = [
-    ("IntrMain_Buffer",     "intr_main",    "arm"),    # ARM IRQ dispatcher
-    ("SoundMainRAM_Buffer", "SoundMainRAM", "thumb"),  # M4A mixer (runs in VBlankIntr)
+    ("IntrMain_Buffer",     ("intr_main", "IntrMain"), "arm"),    # ARM IRQ dispatcher
+    ("SoundMainRAM_Buffer", ("SoundMainRAM",),         "thumb"),  # M4A mixer (runs in VBlankIntr)
 ]
 
 
@@ -179,15 +185,96 @@ REVIEWED_SEEDS = {
         (0x081E34DC, "thumb", "m4a interior resume"),
         (0x081E5E74, "thumb", "m4a interior resume"),
     ],
+    # Emerald — reconstructed from a deep gameplay session's self-heal frag
+    # (overworld/text/sprite/tilemap engine + m4a + libgcc memcpy/divsi). These
+    # are frame-present resume points (the runner yields once/VBlank to present,
+    # then re-dispatches R15 mid-function). Seeding makes the exercised ones
+    # static; the general case is the interior-resume codegen follow-up.
+    "emerald_usa": [
+        (0x080008C8, "thumb", "WaitForVBlank+0x1C"),
+        (0x080008CA, "thumb", "WaitForVBlank+0x1E"),
+        (0x080008CC, "thumb", "WaitForVBlank+0x20"),
+        (0x080008CE, "thumb", "WaitForVBlank+0x22"),
+        (0x08000A00, "thumb", "AllocInternal+0x48"),
+        (0x080013CA, "thumb", "SetBgControlAttributes+0x4A"),
+        (0x0800184E, "thumb", "InitBgsFromTemplates+0x66"),
+        (0x08001ADE, "thumb", "IsDma3ManagerBusyWithBgCopy+0xA"),
+        (0x08001AE8, "thumb", "IsDma3ManagerBusyWithBgCopy+0x14"),
+        (0x08001AEA, "thumb", "IsDma3ManagerBusyWithBgCopy+0x16"),
+        (0x08001AF2, "thumb", "IsDma3ManagerBusyWithBgCopy+0x1E"),
+        (0x08001AFA, "thumb", "IsDma3ManagerBusyWithBgCopy+0x26"),
+        (0x08001AFC, "thumb", "IsDma3ManagerBusyWithBgCopy+0x28"),
+        (0x08001B2C, "thumb", "IsDma3ManagerBusyWithBgCopy+0x58"),
+        (0x08002902, "thumb", "WriteSequenceToBgTilemapBuffer+0xC2"),
+        (0x0800292E, "thumb", "WriteSequenceToBgTilemapBuffer+0xEE"),
+        (0x0800293C, "thumb", "WriteSequenceToBgTilemapBuffer+0xFC"),
+        (0x08002ABC, "thumb", "GetTileMapIndexFromCoords+0x8"),
+        (0x08002AF8, "thumb", "CopyTileMapEntry+0xC"),
+        (0x08002B06, "thumb", "CopyTileMapEntry+0x1A"),
+        (0x08002B46, "thumb", "CopyTileMapEntry+0x5A"),
+        (0x08002E84, "thumb", "FillBitmapRect4Bit+0x84"),
+        (0x08002E8C, "thumb", "FillBitmapRect4Bit+0x8C"),
+        (0x08002EAC, "thumb", "FillBitmapRect4Bit+0xAC"),
+        (0x080032B6, "thumb", "InitWindows+0xF6"),
+        (0x0800482E, "thumb", "RenderFont+0x16"),
+        (0x08004D3A, "thumb", "DecompressGlyphTile+0x12A"),
+        (0x08004E9C, "thumb", "CopyGlyphToWindow+0xFC"),
+        (0x08004ED6, "thumb", "CopyGlyphToWindow+0x136"),
+        (0x08004EE6, "thumb", "CopyGlyphToWindow+0x146"),
+        (0x08004EEE, "thumb", "CopyGlyphToWindow+0x14E"),
+        (0x08004EF0, "thumb", "CopyGlyphToWindow+0x150"),
+        (0x08004F40, "thumb", "CopyGlyphToWindow+0x1A0"),
+        (0x08005C14, "thumb", "RenderText+0x460"),
+        (0x08006C1A, "thumb", "SortSprites+0xBE"),
+        (0x0800716A, "thumb", "ResetOamRange+0x1A"),
+        (0x080072CE, "thumb", "AllocSpriteTiles+0x32"),
+        (0x080072D2, "thumb", "AllocSpriteTiles+0x36"),
+        (0x08007598, "thumb", "ResetAllSprites+0xC"),
+        (0x08007654, "thumb", "AnimateSprite+0x14"),
+        (0x0800767A, "thumb", "AnimateSprite+0x3A"),
+        (0x0800769E, "thumb", "BeginAnim+0x16"),
+        (0x08007808, "thumb", "ContinueAnim+0x90"),
+        (0x08067A80, "thumb", "ZeroBoxMonData+0xC"),
+        (0x08068CC8, "thumb", "CalculateBoxMonChecksum+0x50"),
+        (0x0806F996, "thumb", "BlendPalette+0xA"),
+        (0x08085EE6, "thumb", "RunFieldCallback+0x46"),
+        (0x0808A048, "thumb", "DrawMetatile+0xD0"),
+        (0x0808A064, "thumb", "DrawMetatile+0xEC"),
+        (0x0808A13C, "thumb", "InitCameraUpdateCallback+0x8"),
+        (0x082E00C0, "thumb", "m4aSoundInit+0x50"),
+        (0x082E0792, "thumb", "m4aSoundVSyncOff+0x2E"),
+        (0x082E18BE, "thumb", "ReadFlashId+0x3E"),
+        (0x082E190E, "thumb", "ReadFlashId+0x8E"),
+        (0x082E6DCE, "thumb", "AgbRFU_checkID+0x62"),
+        (0x082E6DD0, "thumb", "AgbRFU_checkID+0x64"),
+        (0x082E7560, "thumb", "__divsi3+0x20"),
+        (0x082E7BF8, "thumb", "__umodsi3+0x18"),
+        (0x082E93F0, "thumb", "memcpy+0x1C"),
+        (0x082E93F2, "thumb", "memcpy+0x1E"),
+        (0x082E93F4, "thumb", "memcpy+0x20"),
+        (0x082E93F6, "thumb", "memcpy+0x22"),
+        (0x082E93F8, "thumb", "memcpy+0x24"),
+        (0x082E93FA, "thumb", "memcpy+0x26"),
+        (0x082E93FC, "thumb", "memcpy+0x28"),
+        (0x082E93FE, "thumb", "memcpy+0x2A"),
+    ],
 }
 
 
 def derive_code_copies(by_name: dict[str, tuple[int, int]], game_id: str = ""):
     """Return [(runtime_start, source_start, size, mode, buf_name, src_name)]."""
     out = []
-    for buf_sym, src_sym, mode in CODE_COPY_PAIRS:
+    for buf_sym, src_candidates, mode in CODE_COPY_PAIRS:
+        if isinstance(src_candidates, str):
+            src_candidates = (src_candidates,)
         buf = by_name.get(buf_sym)
-        src = by_name.get(src_sym)
+        src = None
+        src_sym = None
+        for cand in src_candidates:
+            src = by_name.get(cand)
+            if src:
+                src_sym = cand
+                break
         if not buf or not src:
             continue
         buf_addr, buf_size = buf
