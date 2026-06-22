@@ -1,0 +1,54 @@
+# game.toml — Pokémon FireRed Version (GBA), USA v1.0
+#
+# This is ONE variant of the FRLG multi-variant repo. Its sibling is
+# ../leafgreen/. The runner reads this file (path given to the binary via
+# the GBARECOMP_DEFAULT_GAME_CONFIG compile-def, default
+# "variants/firered/game.toml") to decide which ROM to load, which region
+# config to layer in, where the entry point is, and what save chip is
+# expected. All paths below resolve relative to THIS file's directory
+# (variants/firered/), per runtime.cpp resolve_config_path.
+
+[game]
+name           = "Pokémon FireRed Version"
+short_name     = "firered"
+default_region = "usa"
+
+# ── BIOS identity ────────────────────────────────────────────────────
+# The GBA BIOS is real, executed, recompiled code. The runner refuses to
+# launch without a hash-verified BIOS. Shared across every gbarecomp game.
+# Path is relative to this file: variants/firered/ -> repo -> container.
+[bios]
+path = "../../../gbarecomp/bios/gba_bios.bin"   # override via --bios
+sha1 = "300c20df6731a33952ded8c436f7f186d25d3492"
+
+# ── ROM identity ─────────────────────────────────────────────────────
+[rom]
+path = "roms/firered_usa.gba"   # user-provided; gitignored
+# sha1 is filled in per region in config/<region>.toml (rev0 = 41cb23d8…).
+
+# ── Recompiler entry & layout (consumed by gba_recompile) ───────────
+# NOTE: the actual recompile is driven by symbols/firered.toml (the import
+# tool's output: identity sha1 + extra_func + data_range). These fields are
+# kept for documentation / discoverability.
+[recompiler]
+entry_point   = "0x08000000"
+seeds         = "symbols/imported_symbols.tsv"
+boundaries    = "symbols/function_boundaries.tsv"
+out_dir       = "generated"
+strict        = true
+
+# ── Save chip ────────────────────────────────────────────────────────
+# FireRed/LeafGreen use 1 Mbit (128 KB) flash (agb_flash_1m).
+[save]
+type = "flash1m"          # one of: sram | flash512 | flash1m | eeprom
+
+# ── Runtime ─────────────────────────────────────────────────────────
+# Each variant gets a distinct debug_port so multiple runners coexist:
+#   firered 19852 · leafgreen 19862 · ruby 19872 · sapphire 19882 · emerald 19892
+[runtime]
+debug_port    = 19852
+window_title  = "FireRedRecomp"
+
+[functions]
+arm   = []
+thumb = []

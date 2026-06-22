@@ -1,0 +1,40 @@
+# game.toml — Pokémon LeafGreen Version (GBA), USA v1.0 (rev0)
+#
+# Sibling variant of ../firered/. LeafGreen shares the pokefirered decomp
+# (same repo, GAME_VERSION=LEAFGREEN build target) — symbols come from the
+# `leafgreen` (rev0) build. We target v1.0/rev0 to match FireRed v1.0, the
+# decomp's canonical default build (apples-to-apples, no rev confound). The
+# v1.1 (rev1, 7862c67b) work is archived in ../../../_gen3_leafgreen_rev1_archive/.
+#
+# All paths resolve relative to THIS file's directory (variants/leafgreen/).
+
+[game]
+name           = "Pokémon LeafGreen Version"
+short_name     = "leafgreen"
+default_region = "usa"
+
+[bios]
+path = "../../../gbarecomp/bios/gba_bios.bin"   # override via --bios
+sha1 = "300c20df6731a33952ded8c436f7f186d25d3492"
+
+[rom]
+path = "roms/leafgreen_usa.gba"   # user-provided; gitignored (rev0/v1.0, 574fa542…)
+# sha1 filled in per region in config/<region>.toml.
+
+[recompiler]
+entry_point   = "0x08000000"
+seeds         = "symbols/imported_symbols.tsv"
+boundaries    = "symbols/function_boundaries.tsv"
+out_dir       = "generated"
+strict        = true
+
+[save]
+type = "flash1m"          # LeafGreen: 1 Mbit (128 KB) flash, same as FireRed
+
+[runtime]
+debug_port    = 19862
+window_title  = "LeafGreenRecomp"
+
+[functions]
+arm   = []
+thumb = []

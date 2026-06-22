@@ -1,113 +1,104 @@
-# FireRedRecomp
+# FireRedRecomp — Pokémon FireRed + LeafGreen
 
-Static recompilation of *Pokémon FireRed Version* (GBA), built on top
-of [`gbarecomp`](../gbarecomp).
+Static recompilation of *Pokémon FireRed* and *Pokémon LeafGreen* (GBA),
+built on top of [`gbarecomp`](../gbarecomp).
 
-This is a **recomp**, not a port and not a decomp. We take the original
-ROM's ARM/THUMB machine code and lift it to native C/C++ that runs
-against a principled GBA hardware/runtime model.
+One repo hosts **both** games as separate native targets that share one
+source tree and one engine — the
+[Sonic3AndKnucklesRecomp](../../segagenesisrecomp/Sonic3AndKnucklesRecomp)
+pattern (an `add_gba_variant()` CMake function emits one executable per
+game). FireRed and LeafGreen are the same engine built from one decomp
+(`pret/pokefirered`, different `GAME_VERSION` target), so they live
+together here. Their Gen3 siblings are `../RubySapphireRecomp` and
+`../EmeraldRecomp`.
 
-The decomp at [`pret/pokefirered`](https://github.com/pret/pokefirered)
-is a valuable reference for symbols, function boundaries, ROM layout,
-and asset labels. It is **not** an execution oracle and we do not lift
-its toolchain output as ground truth. Only symbol metadata (names,
-addresses, sizes) enters this repo, via
-`tools/import_pokefirered_symbols/`.
+This is a **recomp**, not a port and not a decomp. The original ROM's
+ARM/THUMB machine code is lifted to native C/C++ that runs against a
+principled GBA hardware/runtime model. Only symbol metadata (names,
+addresses, sizes) from [`pret/pokefirered`](https://github.com/pret/pokefirered)
+enters this repo, via `tools/import_pokefirered_symbols/`.
 
 ---
 
-## ⚠️ Worktree prerequisite — building is paused, by design
+## Variants
 
-**Do not configure/build/recompile yet.** This game's build is wired to
-a dedicated `gbarecomp` **git worktree**, not the live `../gbarecomp`
-tree — and that worktree has not been created yet.
+| Target            | Game      | ROM rev | sha1        | Debug port |
+|-------------------|-----------|---------|-------------|------------|
+| `FireRedRecomp`   | FireRed   | rev0    | `41cb23d8…` | 19852      |
+| `LeafGreenRecomp` | LeafGreen | rev1    | `7862c67b…` | 19862      |
 
-Why a worktree, and why paused:
+The on-disk LeafGreen dump is rev1 (no rev0 here), so that variant targets
+the `leafgreen_rev1` decomp build.
 
-- The live `../gbarecomp` tree is in the middle of heavy **Minish Cap**
-  work (branch `spike/finder-heuristics`, with uncommitted changes).
-  Doing FireRed tool work there would step on that effort.
-- A worktree gives FireRed its own checkout + build dir of the *same*
-  tool repo, fully insulating Minish Cap.
-- We are intentionally waiting until the Minish Cap line **merges to
-  `main`**, so FireRed branches off a clean trunk that already contains
-  the latest finder-heuristics work.
+## Layout
 
-When that time comes (and only then), create the worktree:
-
-```sh
-# from the gbarecomp tool repo
-cd ../gbarecomp
-git worktree add ../gbarecomp-wt-firered -b dev/firered main
+```
+FireRedRecomp/
+  CMakeLists.txt              two add_gba_variant() targets
+  src/main.cpp                variant-agnostic entry (builtins via compile-defs)
+  variants/firered/          ┐ each: game.toml + config/ + symbols/
+  variants/leafgreen/        ┘       + generated/ + roms/
+  third_party/pokefirered/    vendored decomp (reference only; gitignored)
+  tools/import_pokefirered_symbols/  readelf/nm dump → symbols/
+  tools/verify_rom_hash/
 ```
 
-`CMakeLists.txt` defaults `GBARECOMP_ROOT` to `../gbarecomp-wt-firered`
-and **fails loud** with this same reminder until that path exists. Do
-not repoint it at `../gbarecomp` to "unblock" a build — that defeats
-the insulation.
-
-Everything below this line that does **not** need the tool (ROM,
-symbols, configs) is already scaffolded and safe to work on now.
+Each `variants/<name>/game.toml` is self-contained: ROM/BIOS/save/port
+facts, with all paths resolved relative to that file's directory.
 
 ---
 
-## What this repo contains
+## Build & run
 
-| Path                | Purpose                                                       |
-|---------------------|---------------------------------------------------------------|
-| `game.toml`         | ROM identity, entry point, save chip, recompiler config.      |
-| `baserom.md`        | Documented ROM hashes and where the user puts their ROM.      |
-| `config/`           | Per-region configs layered on `game.toml`.                    |
-| `symbols/`          | Imported symbol map + function boundaries (TSV) + master list.|
-| `generated/`        | Output of `gba_recompile`. **Never** hand-edited.             |
-| `src/main.cpp`      | Game runner entry point (links against `gbarecomp_runtime`).  |
-| `src/game_config.*` | Game-specific config wiring.                                  |
-| `tools/`            | Symbol importer + ROM hash verifier.                          |
-| `third_party/`      | Vendored `pret/pokefirered` (reference only; gitignored).     |
-
----
-
-## Build (once the worktree exists)
+Builds against the **live `../gbarecomp` checkout on `main`** ("gbarecomp
+as it is today"). MSYS2 mingw64 + Ninja; invoke the build from PowerShell
+(the Bash sandbox forces `TEMP=C:\Windows`, which breaks `cc1plus`).
 
 ```sh
-cmake -B build -S . -DGBARECOMP_ROOT=../gbarecomp-wt-firered
-cmake --build build
+# (one-time) regenerate symbols from a byte-matching pokefirered WSL build
+#   FireRed:  symbols already committed under variants/firered/symbols/
+#   LeafGreen: see ../_gen3_build_symbols.sh + import_decomp_symbols.py
+
+# recompile a variant → variants/<name>/generated/
+../gbarecomp/build/gba_recompile.exe \
+    --rom variants/leafgreen/roms/leafgreen_usa.gba \
+    --config variants/leafgreen/symbols/leafgreen_usa.toml \
+    --out variants/leafgreen/generated
+
+# configure + build (both targets, or one)
+cmake -G Ninja -S . -B build
+cmake --build build --target FireRedRecomp   -j
+cmake --build build --target LeafGreenRecomp -j
+
+# run (BIOS + ROM both hash-verify or the runtime refuses to start)
+./build/FireRedRecomp.exe
+./build/LeafGreenRecomp.exe
 ```
-
-This produces `verify_rom_hash` and (once functions are recompiled)
-`FireRedRecomp`, linked against the generated C and `gbarecomp_runtime`.
-
----
-
-## Symbols
-
-`tools/import_pokefirered_symbols/import_pokefirered_symbols.py` parses
-pokefirered's prebuilt `.sym` (vendored under `third_party/`) into
-`symbols/`. Re-run any time:
-
-```sh
-python tools/import_pokefirered_symbols/import_pokefirered_symbols.py
-```
-
-Function vs data classification is **heuristic** (the `.sym` has no type
-field); see `symbols/README.md`. The recompiler's discovery loop is the
-authority. The plan is to seed every known symbol, then back entries out
-of the seed as the heuristic finder rediscovers them — measuring the
-finder by how much of the decomp's map it can recover unaided.
 
 ---
 
 ## Status
 
-Phase 0 — pre-build scaffold. ROM hash verified (`41cb23d8…`), symbols
-imported, build intentionally gated on the (not-yet-created) tool
-worktree. No functions recompiled, no boot path validated. Do **not**
-claim boot progress before each milestone in `CLAUDE.md` is measured.
+- **FireRed** — boots copyright → intro → **title screen** (milestone 7).
+  rev0, `41cb23d8…`. Three early freezes fixed (see project history).
+- **LeafGreen** — scaffolded + recompiled against gbarecomp `main`
+  @ `a4e22d7` (90,119 functions; one mis-modeled lib switch self-heals,
+  see below). Boot bring-up follows the same milestone ladder.
+
+### Note on the LeafGreen / Emerald auto-jt self-heal
+LeafGreen rev1 (and Emerald) contain a packed THUMB switch the recompiler's
+abs32 auto-jump-table detector mis-models, producing branches that appear
+to enter the table's own data bytes. The recompiler now treats
+control-flow into an **auto-detected** jump_table as a non-fatal warning
+(the bytes stay data, residual branches resolve through the runtime's
+honest self-heal path) while still hard-erroring on authoritative
+`[[data_range]]` / manual `[[jump_table]]` collisions. The fix lives in
+`gbarecomp/src/recompile/function_finder.cpp` + `tools/gba_recompile/main.cpp`.
 
 ---
 
 ## Provide your own ROM
 
-We don't distribute the ROM. The verified dump lives in `roms/`
-(gitignored). The runner verifies SHA-1 before doing anything and
-refuses to start on an unrecognized hash. See `baserom.md`.
+We don't distribute ROMs. Verified dumps live in `variants/<name>/roms/`
+(gitignored). The runner verifies SHA-1 before doing anything and refuses
+to start on an unrecognized hash. See each variant's `config/<region>.toml`.

@@ -126,3 +126,19 @@ __pycache__/
 # Claude auto-memory (per-user, never committed).
 # ─────────────────────────────────────────────────────────────────────
 memory/
+
+# ─────────────────────────────────────────────────────────────────────
+# Multi-variant layout (variants/<name>/): per-variant generated code is
+# derivative of the copyrighted ROM (regenerate locally); the large
+# readelf/sections/typed symbol dumps are the importer's input (decomp-
+# derived). The README.md placeholder + the symbols/*.toml + *.tsv
+# importer OUTPUT stay tracked so a fresh clone can build. Mirrors the
+# top-level generated/ + symbols/pokefirered_*.txt rules above.
+# ─────────────────────────────────────────────────────────────────────
+variants/*/generated/*.c
+variants/*/generated/*.cpp
+variants/*/generated/*.h
+variants/*/generated/*.json
+variants/*/symbols/*_readelf.txt
+variants/*/symbols/*_sections.txt
+variants/*/symbols/*_typed.txt
