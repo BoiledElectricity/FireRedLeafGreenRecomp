@@ -1,4 +1,4 @@
-# FireRedRecomp — Pokémon FireRed + LeafGreen, Recompiled
+# FireRedLeafGreenRecomp — Pokémon FireRed + LeafGreen, Recompiled
 
 Static recompilation of **Pokémon FireRed** and **Pokémon LeafGreen** (Game Boy
 Advance) to native PC, built on the
@@ -101,8 +101,8 @@ sibling engine checkout on `main`):
 
 ```
 git clone https://github.com/mstan/gbarecomp.git
-git clone https://github.com/mstan/FireRedRecomp.git
-cd FireRedRecomp
+git clone https://github.com/mstan/FireRedLeafGreenRecomp.git
+cd FireRedLeafGreenRecomp
 ```
 
 **2. Supply your ROM(s)** at `variants/firered/roms/firered_usa.gba` and/or
