@@ -1,104 +1,134 @@
-# FireRedRecomp — Pokémon FireRed + LeafGreen
+# FireRedRecomp — Pokémon FireRed + LeafGreen, Recompiled
 
-Static recompilation of *Pokémon FireRed* and *Pokémon LeafGreen* (GBA),
-built on top of [`gbarecomp`](../gbarecomp).
+Static recompilation of **Pokémon FireRed** and **Pokémon LeafGreen** (Game Boy
+Advance) to native PC, built on the
+[`gbarecomp`](https://github.com/mstan/gbarecomp) framework.
 
-One repo hosts **both** games as separate native targets that share one
-source tree and one engine — the
-[Sonic3AndKnucklesRecomp](../../segagenesisrecomp/Sonic3AndKnucklesRecomp)
-pattern (an `add_gba_variant()` CMake function emits one executable per
-game). FireRed and LeafGreen are the same engine built from one decomp
-(`pret/pokefirered`, different `GAME_VERSION` target), so they live
-together here. Their Gen3 siblings are `../RubySapphireRecomp` and
-`../EmeraldRecomp`.
+One repo hosts **both** games as separate native targets sharing one source tree
+and one engine (the [Sonic3AndKnucklesRecomp](https://github.com/mstan/Sonic3AndKnucklesRecomp)
+multi-variant pattern — an `add_gba_variant()` CMake function emits one executable
+per game). Their Gen3 siblings live in
+[`RubySapphireRecomp`](https://github.com/mstan/RubySapphireRecomp) and
+[`EmeraldRecomp`](https://github.com/mstan/EmeraldRecomp).
 
-This is a **recomp**, not a port and not a decomp. The original ROM's
-ARM/THUMB machine code is lifted to native C/C++ that runs against a
-principled GBA hardware/runtime model. Only symbol metadata (names,
-addresses, sizes) from [`pret/pokefirered`](https://github.com/pret/pokefirered)
-enters this repo, via `tools/import_pokefirered_symbols/`.
+> ### Status — playable bring-up (v0.0.1), and self-improving
+>
+> This is a **static-recompilation base + runner**, not a finished port. Both
+> games **boot through the BIOS intro to the title screen and into gameplay**.
+> It is **early** — not every code path is statically recompiled yet, and content
+> has not been exhaustively tested.
+>
+> **It gets better the more you play.** Any code path the static recompiler hasn't
+> covered runs through a built-in **interpreter the first time it's hit**, then is
+> **JIT-compiled to native** (in-process, no toolchain needed) and **remembered on
+> disk** — so the next launch runs it natively from the start. Interpreted once,
+> native ever after; coverage grows toward fully-native as the game is played. See
+> [How it self-improves](#how-it-self-improves).
 
 ---
+
+## What "static recompilation" means here
+
+The ROM's **ARM7TDMI machine code is statically translated to native C** — every
+function the game runs becomes a real generated C function. Unlike most recomp
+projects, **the GBA BIOS is recompiled and executed too** (not HLE'd or stubbed),
+so the boot sequence and interrupt/SWI handlers run as real recompiled code. The
+rest of the console — the PPU (graphics), APU + M4A sound engine, DMA, timers,
+and hardware I/O — is modeled by the `gbarecomp` runtime.
+
+Only **symbol metadata** (function names, addresses, sizes) from the
+[`pret/pokefirered`](https://github.com/pret/pokefirered) decompilation enters this
+repo — never its C source, build output, or toolchain. **The ROM is never
+redistributed**; you supply your own legally-dumped copy.
 
 ## Variants
 
-| Target            | Game      | ROM rev | sha1        | Debug port |
-|-------------------|-----------|---------|-------------|------------|
-| `FireRedRecomp`   | FireRed   | rev0    | `41cb23d8…` | 19852      |
-| `LeafGreenRecomp` | LeafGreen | rev1    | `7862c67b…` | 19862      |
+| Target            | Game                | ROM (USA)   | SHA-1                                      | Debug port |
+|-------------------|---------------------|-------------|-------------------------------------------|------------|
+| `FireRedRecomp`   | Pokémon FireRed     | v1.0 (rev0) | `41cb23d8dccc8ebd7c649cd8fbb58eeace6e2fdc` | 19852      |
+| `LeafGreenRecomp` | Pokémon LeafGreen   | v1.0 (rev0) | `574fa542ffebb14be69902d1d36f1ec0a4afd71e` | 19862      |
 
-The on-disk LeafGreen dump is rev1 (no rev0 here), so that variant targets
-the `leafgreen_rev1` decomp build.
+The runtime **refuses to launch on an unrecognized ROM** — the SHA-1 must match.
 
-## Layout
+## Quick start
+
+1. Build from source (below) — prebuilt binaries are not yet published.
+2. Run the executable for the game you built.
+3. Supply your own **legally-obtained** FireRed / LeafGreen (USA) ROM when prompted.
+   The path is cached next to the exe for future launches.
+4. Play. Early on you may briefly see the interpreter warm up new code paths; once
+   warmed (and cached), they run native.
+
+## Controls
+
+| GBA button | Keyboard      |
+|------------|---------------|
+| D-Pad      | Arrow keys    |
+| A          | Z             |
+| B          | X             |
+| Start      | Enter         |
+| Select     | Backspace     |
+
+Save states: **Shift+F1–F9** save to a slot, **F1–F9** load it.
+
+## How it self-improves
+
+`gbarecomp`'s coverage is honest: a path that wasn't statically recompiled is
+**bridged through the interpreter** the first time, *loudly*, then healed:
+
+- **First hit:** the interpreter runs the missed function (correct, just not
+  native) and the runtime records it.
+- **Heal:** the function is **JIT-compiled to native in-process** via a
+  toolchain-less backend (sljit) — no compiler required on your machine.
+- **Persist:** the healed path is written to a per-ROM cache
+  (`recomp_cache/<rom-sha1>/`), so **the next launch re-JITs it up front** and it
+  runs native from the start.
+
+The result is a game that converges toward fully-native execution the more it's
+played, and **stays** improved across launches. A handful of instruction patterns
+the JIT can't lower yet stay on the interpreter (precision over recall); those are
+emitter gaps that close over time. Self-improvement is on by default; set
+`GBARECOMP_SELFHEAL_RECOMPILE=0` for a pure-interpreter run.
+
+## Building from source
+
+**Prerequisites (Windows):** [MSYS2](https://www.msys2.org/) with the mingw64
+toolchain (`gcc`/`g++`), CMake 3.16+, Ninja, and SDL2 (mingw64 package). Builds
+are invoked from PowerShell with the mingw64 toolchain on `PATH`.
+
+**1. Clone this repo next to `gbarecomp`** (the game repo builds against the
+sibling engine checkout on `main`):
 
 ```
-FireRedRecomp/
-  CMakeLists.txt              two add_gba_variant() targets
-  src/main.cpp                variant-agnostic entry (builtins via compile-defs)
-  variants/firered/          ┐ each: game.toml + config/ + symbols/
-  variants/leafgreen/        ┘       + generated/ + roms/
-  third_party/pokefirered/    vendored decomp (reference only; gitignored)
-  tools/import_pokefirered_symbols/  readelf/nm dump → symbols/
-  tools/verify_rom_hash/
+git clone https://github.com/mstan/gbarecomp.git
+git clone https://github.com/mstan/FireRedRecomp.git
+cd FireRedRecomp
 ```
 
-Each `variants/<name>/game.toml` is self-contained: ROM/BIOS/save/port
-facts, with all paths resolved relative to that file's directory.
+**2. Supply your ROM(s)** at `variants/firered/roms/firered_usa.gba` and/or
+`variants/leafgreen/roms/leafgreen_usa.gba` (SHA-1s above). ROMs are gitignored
+and never committed.
 
----
+**3. Recompile + build.** The committed `variants/*/symbols/*.toml` are the
+importer output, so you can regenerate the C and build directly:
 
-## Build & run
-
-Builds against the **live `../gbarecomp` checkout on `main`** ("gbarecomp
-as it is today"). MSYS2 mingw64 + Ninja; invoke the build from PowerShell
-(the Bash sandbox forces `TEMP=C:\Windows`, which breaks `cc1plus`).
-
-```sh
-# (one-time) regenerate symbols from a byte-matching pokefirered WSL build
-#   FireRed:  symbols already committed under variants/firered/symbols/
-#   LeafGreen: see ../_gen3_build_symbols.sh + import_decomp_symbols.py
-
-# recompile a variant → variants/<name>/generated/
-../gbarecomp/build/gba_recompile.exe \
-    --rom variants/leafgreen/roms/leafgreen_usa.gba \
-    --config variants/leafgreen/symbols/leafgreen_usa.toml \
-    --out variants/leafgreen/generated
-
-# configure + build (both targets, or one)
-cmake -G Ninja -S . -B build
-cmake --build build --target FireRedRecomp   -j
-cmake --build build --target LeafGreenRecomp -j
-
-# run (BIOS + ROM both hash-verify or the runtime refuses to start)
-./build/FireRedRecomp.exe
-./build/LeafGreenRecomp.exe
+```
+# from PowerShell, mingw64 on PATH
+gba_recompile --rom variants/firered/roms/firered_usa.gba \
+              --config variants/firered/symbols/firered.toml \
+              --out variants/firered/generated
+cmake -S . -B build -G Ninja
+cmake --build build --target FireRedRecomp
 ```
 
----
+(`gba_recompile` is built from the `gbarecomp` checkout; see that repo's README.)
+The recompiled translation unit is large — expect a multi-minute compile.
 
-## Status
+## Legal
 
-- **FireRed** — boots copyright → intro → **title screen** (milestone 7).
-  rev0, `41cb23d8…`. Three early freezes fixed (see project history).
-- **LeafGreen** — scaffolded + recompiled against gbarecomp `main`
-  @ `a4e22d7` (90,119 functions; one mis-modeled lib switch self-heals,
-  see below). Boot bring-up follows the same milestone ladder.
-
-### Note on the LeafGreen / Emerald auto-jt self-heal
-LeafGreen rev1 (and Emerald) contain a packed THUMB switch the recompiler's
-abs32 auto-jump-table detector mis-models, producing branches that appear
-to enter the table's own data bytes. The recompiler now treats
-control-flow into an **auto-detected** jump_table as a non-fatal warning
-(the bytes stay data, residual branches resolve through the runtime's
-honest self-heal path) while still hard-erroring on authoritative
-`[[data_range]]` / manual `[[jump_table]]` collisions. The fix lives in
-`gbarecomp/src/recompile/function_finder.cpp` + `tools/gba_recompile/main.cpp`.
-
----
-
-## Provide your own ROM
-
-We don't distribute ROMs. Verified dumps live in `variants/<name>/roms/`
-(gitignored). The runner verifies SHA-1 before doing anything and refuses
-to start on an unrecognized hash. See each variant's `config/<region>.toml`.
+This project contains **no copyrighted ROM data, no Nintendo BIOS, and no decomp
+source** — only original recompiler/runtime code and symbol metadata. **You must
+supply your own legally-dumped ROM** (and BIOS, where the runtime requires one).
+Pokémon, FireRed, and LeafGreen are trademarks of Nintendo / Game Freak / The
+Pokémon Company; this project is an unaffiliated, non-commercial preservation and
+research effort.
