@@ -59,6 +59,17 @@ function(add_gba_variant TARGET NAME PORT WIN_TITLE GAME_NAME ROM_SHA1)
         src/main.cpp
         ${VARIANT_GENERATED})
 
+    # Keep the very large generated guest translation units at a bounded
+    # optimization/debug-info cost. gba_recompile emits either the legacy
+    # recompiled.cpp or deterministic recompiled_NNN.cpp shards.
+    set(VARIANT_RECOMPILED ${VARIANT_GENERATED})
+    list(FILTER VARIANT_RECOMPILED INCLUDE REGEX
+        "/recompiled(_[0-9]+)?\\.cpp$")
+    if(VARIANT_RECOMPILED)
+        set_source_files_properties(${VARIANT_RECOMPILED} PROPERTIES
+            COMPILE_OPTIONS "-O1;-g0")
+    endif()
+
     target_include_directories(${TARGET} PRIVATE
         "${GBARECOMP_ROOT}/src/armv4t"
         "${GBARECOMP_ROOT}/src/gba"

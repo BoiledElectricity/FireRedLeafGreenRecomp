@@ -7,6 +7,7 @@ id = "firered_usa"
 load_address = 0x08000000
 size = 0x01000000
 entry_pc = 0x08000000
+codegen_shards = 64
 
 [identity]
 sha1 = "41cb23d8dccc8ebd7c649cd8fbb58eeace6e2fdc"
