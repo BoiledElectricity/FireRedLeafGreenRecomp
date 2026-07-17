@@ -21,7 +21,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Platform core. Builds against the live gbarecomp checkout on main
 # ("gbarecomp as it is today"). Override with -DGBARECOMP_ROOT=... .
-set(GBARECOMP_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/../gbarecomp"
+set(GBARECOMP_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/gbarecomp"
     CACHE PATH "Path to the gbarecomp platform-core checkout")
 
 if(NOT EXISTS "${GBARECOMP_ROOT}/CMakeLists.txt")
@@ -43,13 +43,14 @@ add_subdirectory("${GBARECOMP_ROOT}" gbarecomp_build EXCLUDE_FROM_ALL)
 add_executable(verify_rom_hash tools/verify_rom_hash/main.cpp)
 
 # ─────────────────────────────────────────────────────────────────────
-# add_gba_variant(<target> <name> <port> <win_title> <game_name> <sha1>)
+# add_gba_variant(<target> <name> <port> <win_title> <game_name> <sha1>
+#                  <crc32>)
 #   Builds one native game binary from src/main.cpp + the variant's
 #   generated/*.{c,cpp}. Before the recompile has run, generated/ is empty
 #   and the target is a thin scaffold (main only) that still validates the
 #   wiring. game.toml is selected at runtime via the compile-def below.
 # ─────────────────────────────────────────────────────────────────────
-function(add_gba_variant TARGET NAME PORT WIN_TITLE GAME_NAME ROM_SHA1)
+function(add_gba_variant TARGET NAME PORT WIN_TITLE GAME_NAME ROM_SHA1 ROM_CRC32)
     set(VARIANT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/variants/${NAME}")
     file(GLOB VARIANT_GENERATED CONFIGURE_DEPENDS
         "${VARIANT_DIR}/generated/*.c"
@@ -92,7 +93,27 @@ function(add_gba_variant TARGET NAME PORT WIN_TITLE GAME_NAME ROM_SHA1)
         GBARECOMP_WINDOW_TITLE="${WIN_TITLE}"
         GBARECOMP_DEFAULT_GAME_CONFIG="variants/${NAME}/game.toml"
         GBARECOMP_BUILTIN_NAME="${GAME_NAME}"
-        GBARECOMP_BUILTIN_SHA1="${ROM_SHA1}")
+        GBARECOMP_BUILTIN_SHA1="${ROM_SHA1}"
+        GBARECOMP_BUILTIN_CRC32=${ROM_CRC32}
+        GBARECOMP_BUILTIN_REGION="USA")
+
+    if(GBAGAME_RECOMP_UI)
+        target_link_libraries(${TARGET} PRIVATE game_launcher_ui)
+        # Per-variant box art: variants share one build dir, so each stages
+        # its own file and points its exe at it (RunOptions.launcher_boxart).
+        set(VARIANT_BOXART "${VARIANT_DIR}/launcher/boxart.tga")
+        if(EXISTS "${VARIANT_BOXART}")
+            add_custom_command(TARGET ${TARGET} POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -E make_directory
+                    $<TARGET_FILE_DIR:${TARGET}>/assets/img
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                    "${VARIANT_BOXART}"
+                    $<TARGET_FILE_DIR:${TARGET}>/assets/img/boxart_${NAME}.tga
+                VERBATIM)
+            target_compile_definitions(${TARGET} PRIVATE
+                GBARECOMP_BOXART="assets/img/boxart_${NAME}.tga")
+        endif()
+    endif()
 
     # Stack reserve: 256 MB. Gen3 ROMs lift to ~90k functions; the Win64
     # SEH unwind table is processed with bounded recursion at startup that
@@ -106,11 +127,36 @@ function(add_gba_variant TARGET NAME PORT WIN_TITLE GAME_NAME ROM_SHA1)
     endif()
 endfunction()
 
+# ─────────────────────────────────────────────────────────────────────
+# recomp-ui pre-boot launcher (Dear ImGui), consumed as a git submodule
+# (junctioned locally to the shared checkout). Isolated in its own
+# static lib so recomp-ui's sources + RECOMP_LAUNCHER define never
+# touch the giant generated/*.c TU flags — only main.cpp (gated on
+# GBAGAME_RECOMP_UI) and launcher_boot.cpp know the launcher exists.
+# ─────────────────────────────────────────────────────────────────────
+option(GBAGAME_RECOMP_UI "Build the recomp-ui pre-boot launcher" ON)
+if(GBAGAME_RECOMP_UI)
+    include(${CMAKE_CURRENT_SOURCE_DIR}/recomp-ui/recomp_ui.cmake)
+    add_library(game_launcher_ui STATIC src/game_launcher_boot.cpp)
+    target_include_directories(game_launcher_ui PRIVATE
+        "${GBARECOMP_ROOT}/src/runtime"   # launcher_seam.h + runtime.h
+        "${GBARECOMP_ROOT}/src/gba"
+        src
+    )
+    recomp_target_launcher_ui(game_launcher_ui)   # sources, includes, RECOMP_LAUNCHER, asset staging
+    find_package(SDL2 REQUIRED)
+    target_link_libraries(game_launcher_ui PUBLIC SDL2::SDL2)
+    if(WIN32)
+        target_link_libraries(game_launcher_ui PUBLIC opengl32)
+    endif()
+    set_property(SOURCE src/main.cpp APPEND PROPERTY COMPILE_DEFINITIONS GBAGAME_RECOMP_UI)
+endif()
+
 # FireRed  — rev0, sha1 41cb23d8…
 add_gba_variant(FireRedRecomp   firered   19852 "FireRedRecomp"
-    "Pokemon FireRed (USA)"  "41cb23d8dccc8ebd7c649cd8fbb58eeace6e2fdc")
+    "Pokemon FireRed (USA)"  "41cb23d8dccc8ebd7c649cd8fbb58eeace6e2fdc" 0xDD88761C)
 
 # LeafGreen — rev0 / v1.0, sha1 574fa542… (definitive build, matches FireRed
 # v1.0; rev1 7862c67b work archived in ../../../_gen3_leafgreen_rev1_archive/).
 add_gba_variant(LeafGreenRecomp leafgreen 19862 "LeafGreenRecomp"
-    "Pokemon LeafGreen (USA)" "574fa542ffebb14be69902d1d36f1ec0a4afd71e")
+    "Pokemon LeafGreen (USA)" "574fa542ffebb14be69902d1d36f1ec0a4afd71e" 0xD69C96CC)

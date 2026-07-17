@@ -142,3 +142,7 @@ variants/*/generated/*.json
 variants/*/symbols/*_readelf.txt
 variants/*/symbols/*_sections.txt
 variants/*/symbols/*_typed.txt
+
+# README showcase screenshots (override the *.png ignore above)
+!docs/screenshots/
+!docs/screenshots/*.png

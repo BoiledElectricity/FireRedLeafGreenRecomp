@@ -27,6 +27,16 @@ per game). Their Gen3 siblings live in
 
 ---
 
+## Screenshots
+
+| Pokémon FireRed | Pokémon LeafGreen |
+|---|---|
+| ![Pokémon FireRed — title screen, native recompiled build](docs/screenshots/firered.png) | ![Pokémon LeafGreen — title screen, native recompiled build](docs/screenshots/leafgreen.png) |
+
+*Native recompiled builds (no emulator), captured running the original ROMs.*
+
+---
+
 ## What "static recompilation" means here
 
 The ROM's **ARM7TDMI machine code is statically translated to native C** — every
