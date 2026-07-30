@@ -148,7 +148,7 @@ if(GBAGAME_RECOMP_UI)
         "${GBARECOMP_ROOT}/src/gba"
         src
     )
-    recomp_target_launcher_ui(game_launcher_ui)   # sources, includes, RECOMP_LAUNCHER, asset staging
+    recomp_target_launcher_ui(game_launcher_ui CONSOLE gba)   # sources, includes, RECOMP_LAUNCHER, asset staging
     find_package(SDL2 REQUIRED)
     target_link_libraries(game_launcher_ui PUBLIC SDL2::SDL2)
     if(WIN32)
