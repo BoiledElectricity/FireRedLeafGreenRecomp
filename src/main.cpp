@@ -112,6 +112,14 @@ int main(int argc, char** argv) {
     // this the PPU fails margins closed and renders them black no matter what
     // the provider supplies.
     opts.ws_authored_margin_layers = 0xF;
+    // Widescreen margin sidecar: the guest routines and state it drives, from
+    // gbarecomp/docs/WIDESCREEN_STEPC_PLAN.md. Margins are produced by the
+    // game's own DrawMetatileAt over the extended region, so what appears
+    // beside the faithful 240 is real map data rather than synthesized tiles.
+    opts.ws_draw_metatile_pc = 0x0805A948;   // DrawMetatileAt
+    opts.ws_tilemap_ptrs     = 0x03005014;   // gBGTilemapBuffers1/2/3
+    opts.ws_mapheader        = 0x02036DFC;   // gMapHeader
+    opts.ws_curcoords        = 0x02036E48;   // gObjectEvents[0].currentCoords
     opts.view_gate_addr  = 0x030030F4;   // gMain 0x030030F0, callback2 at +4
     opts.view_gate_value = 0x080565B4;   // CB2_Overworld
 
