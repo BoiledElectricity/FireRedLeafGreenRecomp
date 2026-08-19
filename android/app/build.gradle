@@ -1,5 +1,13 @@
 apply plugin: 'com.android.application'
 
+// Release signing, if a keystore has been set up (see android/README.md).
+// Absent, the release variant simply builds unsigned.
+def keystoreProps = new Properties()
+def keystorePropsFile = rootProject.file('keystore.properties')
+if (keystorePropsFile.exists()) {
+    keystorePropsFile.withInputStream { keystoreProps.load(it) }
+}
+
 // The SDL2 Java shim must come from the same checkout the native build links,
 // so it is read straight out of the engine's vendored SDL2.
 def sdl2Java = '../../gbarecomp/third_party/SDL2/android-project/app/src/main/java'
@@ -58,9 +66,35 @@ android {
         }
     }
 
+    signingConfigs {
+        if (keystoreProps['storeFile']) {
+            release {
+                storeFile rootProject.file(keystoreProps['storeFile'])
+                storePassword keystoreProps['storePassword']
+                keyAlias keystoreProps['keyAlias']
+                keyPassword keystoreProps['keyPassword']
+            }
+        }
+    }
+
     buildTypes {
         release {
             minifyEnabled false
+            // Release is the build meant to be played: the engine compiles at
+            // -O3 and the generated shards leave their iteration-speed -O1.
+            externalNativeBuild {
+                cmake {
+                    // AGP builds the release variant as RelWithDebInfo (-O2),
+                    // and cppFlags land BEFORE that, so -O2 would win.
+                    // Overriding the config's own flag variable is what sticks.
+                    arguments '-DGBAGAME_SHARD_OPT=-O3',
+                              '-DCMAKE_CXX_FLAGS_RELWITHDEBINFO=-O3 -DNDEBUG',
+                              '-DCMAKE_C_FLAGS_RELWITHDEBINFO=-O3 -DNDEBUG'
+                }
+            }
+            if (keystoreProps['storeFile']) {
+                signingConfig signingConfigs.release
+            }
         }
     }
 

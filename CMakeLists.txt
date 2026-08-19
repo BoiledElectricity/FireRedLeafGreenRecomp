@@ -24,6 +24,11 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(GBARECOMP_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/gbarecomp"
     CACHE PATH "Path to the gbarecomp platform-core checkout")
 
+# Optimization level for the generated guest shards. -O1 keeps a ~90k-function
+# corpus compiling in reasonable time while iterating; raise it for play builds.
+set(GBAGAME_SHARD_OPT "-O1" CACHE STRING
+    "Optimization flag applied to the generated recompiled_NNN.cpp shards")
+
 if(NOT EXISTS "${GBARECOMP_ROOT}/CMakeLists.txt")
     message(FATAL_ERROR
         "GBARECOMP_ROOT does not point to a gbarecomp checkout:\n"
@@ -88,13 +93,14 @@ function(add_gba_variant TARGET NAME PORT WIN_TITLE GAME_NAME ROM_SHA1 ROM_CRC32
 
     # Keep the very large generated guest translation units at a bounded
     # optimization/debug-info cost. gba_recompile emits deterministic
-    # recompiled_NNN.cpp shards.
+    # recompiled_NNN.cpp shards. Raise GBAGAME_SHARD_OPT for a build meant to
+    # be played rather than iterated on — it costs compile time.
     set(VARIANT_RECOMPILED ${VARIANT_GENERATED})
     list(FILTER VARIANT_RECOMPILED INCLUDE REGEX
         "/recompiled_[0-9]+\\.cpp$")
     if(VARIANT_RECOMPILED)
         set_source_files_properties(${VARIANT_RECOMPILED} PROPERTIES
-            COMPILE_OPTIONS "-O1;-g0")
+            COMPILE_OPTIONS "${GBAGAME_SHARD_OPT};-g0")
     endif()
 
     target_include_directories(${TARGET} PRIVATE

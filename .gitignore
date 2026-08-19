@@ -162,3 +162,7 @@ android/build/
 android/app/build/
 android/app/.cxx/
 android/local.properties
+
+# Release signing material — never committed
+android/*.keystore
+android/keystore.properties

@@ -1,0 +1,136 @@
+// AUTO-GENERATED Stage-2 self-heal overlay. Do not edit.
+// function 0x00001150 mode=arm end=0x0000116C
+#include "overlay_runtime_arm.h"
+
+#ifdef _WIN32
+#define OVL_DLLEXPORT __declspec(dllexport)
+#else
+#define OVL_DLLEXPORT __attribute__((visibility("default")))
+#endif
+#ifdef __cplusplus
+#define OVL_EXPORT extern "C" OVL_DLLEXPORT
+#else
+#define OVL_EXPORT OVL_DLLEXPORT
+#endif
+
+const GbaOverlayCallbacks* g_ovl = 0;
+OVL_EXPORT uint32_t overlay_abi(void) { return 3u; }
+OVL_EXPORT void overlay_init(const GbaOverlayCallbacks* cb) { g_ovl = cb; }
+
+OVL_EXPORT void func_00001150(void) {
+    if (g_runtime_fn_entry_hook) g_runtime_fn_entry_hook(0x00001150u);
+    /* 00001150  00001150 A ldrb r6,[r0],#0x1 */
+    g_cpu.R[15] = 0x00001150u;
+    if (runtime_should_yield()) return;
+    if (g_runtime_insn_trace) runtime_insn_fp();
+    uint32_t _cyc_00001150 = 1u;
+    _cyc_00001150 = 2u;
+    uint32_t _base_00001150 = g_cpu.R[0];
+    uint32_t _off_00001150;
+    _off_00001150 = 0x00000001u;
+    uint32_t _ea_00001150 = _base_00001150;
+    uint32_t _post_00001150 = _base_00001150 + _off_00001150;
+    _cyc_00001150 += runtime_mem_cycles(_ea_00001150, 1u, 0u);
+    uint32_t _v_00001150;
+    _v_00001150 = bus_read_u8(_ea_00001150);
+    if (0u != 6u) g_cpu.R[0] = _post_00001150;
+    g_cpu.R[6] = _v_00001150;
+    g_cpu.R[15] = 0x00001154u;
+    runtime_tick(_cyc_00001150);
+    /* 00001154  00001154 A and r5,r6,#0xf */
+    g_cpu.R[15] = 0x00001154u;
+    if (runtime_should_yield()) return;
+    if (g_runtime_insn_trace) runtime_insn_fp();
+    uint32_t _cyc_00001154 = 1u;
+    _cyc_00001154 = 1u;
+    uint32_t _rn_00001154 = g_cpu.R[6];
+    uint32_t _r_00001154;
+    _r_00001154 = _rn_00001154 & 0x0000000Fu;
+    g_cpu.R[5] = _r_00001154;
+    g_cpu.R[15] = 0x00001158u;
+    runtime_tick(_cyc_00001154);
+    /* 00001158  00001158 A mov r12,r5,lsl #8 */
+    g_cpu.R[15] = 0x00001158u;
+    if (runtime_should_yield()) return;
+    if (g_runtime_insn_trace) runtime_insn_fp();
+    uint32_t _cyc_00001158 = 1u;
+    _cyc_00001158 = 1u;
+    uint32_t _rm_00001158 = g_cpu.R[5];
+    uint32_t _op2_00001158;
+    uint32_t _co_00001158;
+    _op2_00001158 = _rm_00001158 << 8;
+    _co_00001158 = (_rm_00001158 >> 24) & 1u;
+    uint32_t _r_00001158;
+    _r_00001158 = _op2_00001158;
+    g_cpu.R[12] = _r_00001158;
+    g_cpu.R[15] = 0x0000115Cu;
+    runtime_tick(_cyc_00001158);
+    /* 0000115C  0000115c A ldrb r6,[r0],#0x1 */
+    g_cpu.R[15] = 0x0000115Cu;
+    if (runtime_should_yield()) return;
+    if (g_runtime_insn_trace) runtime_insn_fp();
+    uint32_t _cyc_0000115C = 1u;
+    _cyc_0000115C = 2u;
+    uint32_t _base_0000115C = g_cpu.R[0];
+    uint32_t _off_0000115C;
+    _off_0000115C = 0x00000001u;
+    uint32_t _ea_0000115C = _base_0000115C;
+    uint32_t _post_0000115C = _base_0000115C + _off_0000115C;
+    _cyc_0000115C += runtime_mem_cycles(_ea_0000115C, 1u, 0u);
+    uint32_t _v_0000115C;
+    _v_0000115C = bus_read_u8(_ea_0000115C);
+    if (0u != 6u) g_cpu.R[0] = _post_0000115C;
+    g_cpu.R[6] = _v_0000115C;
+    g_cpu.R[15] = 0x00001160u;
+    runtime_tick(_cyc_0000115C);
+    /* 00001160  00001160 A orr r5,r6,r12 */
+    g_cpu.R[15] = 0x00001160u;
+    if (runtime_should_yield()) return;
+    if (g_runtime_insn_trace) runtime_insn_fp();
+    uint32_t _cyc_00001160 = 1u;
+    _cyc_00001160 = 1u;
+    uint32_t _rm_00001160 = g_cpu.R[12];
+    uint32_t _op2_00001160;
+    uint32_t _co_00001160;
+    _op2_00001160 = _rm_00001160;
+    _co_00001160 = cpsr_c();
+    uint32_t _rn_00001160 = g_cpu.R[6];
+    uint32_t _r_00001160;
+    _r_00001160 = _rn_00001160 | _op2_00001160;
+    g_cpu.R[5] = _r_00001160;
+    g_cpu.R[15] = 0x00001164u;
+    runtime_tick(_cyc_00001160);
+    /* 00001164  00001164 A add r12,r5,#0x1 */
+    g_cpu.R[15] = 0x00001164u;
+    if (runtime_should_yield()) return;
+    if (g_runtime_insn_trace) runtime_insn_fp();
+    uint32_t _cyc_00001164 = 1u;
+    _cyc_00001164 = 1u;
+    uint32_t _rn_00001164 = g_cpu.R[5];
+    uint32_t _r_00001164;
+    _r_00001164 = _rn_00001164 + 0x00000001u;
+    g_cpu.R[12] = _r_00001164;
+    g_cpu.R[15] = 0x00001168u;
+    runtime_tick(_cyc_00001164);
+    /* 00001168  00001168 A sub r2,r2,r3 */
+    g_cpu.R[15] = 0x00001168u;
+    if (runtime_should_yield()) return;
+    if (g_runtime_insn_trace) runtime_insn_fp();
+    uint32_t _cyc_00001168 = 1u;
+    _cyc_00001168 = 1u;
+    uint32_t _rm_00001168 = g_cpu.R[3];
+    uint32_t _op2_00001168;
+    uint32_t _co_00001168;
+    _op2_00001168 = _rm_00001168;
+    _co_00001168 = cpsr_c();
+    uint32_t _rn_00001168 = g_cpu.R[2];
+    uint32_t _r_00001168;
+    _r_00001168 = _rn_00001168 - _op2_00001168;
+    g_cpu.R[2] = _r_00001168;
+    g_cpu.R[15] = 0x0000116Cu;
+    runtime_tick(_cyc_00001168);
+    /* fall-through to 0x0000116C */
+    g_cpu.R[15] = 0x0000116Cu;
+    runtime_dispatch(0x0000116Cu);
+    return;
+}

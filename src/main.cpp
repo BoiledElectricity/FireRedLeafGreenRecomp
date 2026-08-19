@@ -104,6 +104,12 @@ int main(int argc, char** argv) {
     // sidecar, which is still WIP and needs GBARECOMP_WS_WIP=1.
     opts.max_view_width = 384;
     opts.launcher_expose_widescreen = false;
+    // Only the overworld has a world to widen into. Everywhere else — title,
+    // menus, battles, the attract demo — the field background is a 32-tile
+    // ring, so expanding just repeats it (two Charizards on the title screen).
+    // gMain.callback2 is the game's own scene discriminator.
+    opts.view_gate_addr  = 0x030030F4;   // gMain 0x030030F0, callback2 at +4
+    opts.view_gate_value = 0x080565B4;   // CB2_Overworld
 
 #if defined(GBAGAME_RECOMP_UI)
     std::vector<std::string> args(argv, argv + argc);

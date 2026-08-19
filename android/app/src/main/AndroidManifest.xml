@@ -18,6 +18,10 @@
         android:theme="@style/AppTheme"
         android:hardwareAccelerated="true">
 
+        <!-- TEMPORARY widescreen experiment - revert before committing. -->
+        <meta-data android:name="SDL_ENV.GBARECOMP_WS_WIP" android:value="1" />
+        <meta-data android:name="SDL_ENV.GBARECOMP_VIEW_WIDTH" android:value="384" />
+
         <activity
             android:name="com.mstan.frlgrecomp.GbaRecompActivity"
             android:label="@string/app_name"
