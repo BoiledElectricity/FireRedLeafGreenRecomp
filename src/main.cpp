@@ -102,7 +102,9 @@ int main(int argc, char** argv) {
     // changes nothing until a user asks for a wider one with --view-width /
     // GBARECOMP_VIEW_WIDTH. Margin content comes from the Pokemon Step C
     // sidecar, which is still WIP and needs GBARECOMP_WS_WIP=1.
-    opts.max_view_width = 384;
+    // 512 is the hardware ceiling for a 64-tile-wide background, and the
+    // widest the PPU's expanded path can address. A 20:9 handheld wants ~356.
+    opts.max_view_width = 512;
     opts.launcher_expose_widescreen = false;
     // Only the overworld has a world to widen into. Everywhere else — title,
     // menus, battles, the attract demo — the field background is a 32-tile
