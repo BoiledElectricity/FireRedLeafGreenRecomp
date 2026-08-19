@@ -108,6 +108,10 @@ int main(int argc, char** argv) {
     // menus, battles, the attract demo — the field background is a 32-tile
     // ring, so expanding just repeats it (two Charizards on the title screen).
     // gMain.callback2 is the game's own scene discriminator.
+    // Let the widescreen margin provider actually reach the screen. Without
+    // this the PPU fails margins closed and renders them black no matter what
+    // the provider supplies.
+    opts.ws_authored_margin_layers = 0xF;
     opts.view_gate_addr  = 0x030030F4;   // gMain 0x030030F0, callback2 at +4
     opts.view_gate_value = 0x080565B4;   // CB2_Overworld
 
