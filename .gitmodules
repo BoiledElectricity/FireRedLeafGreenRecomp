@@ -4,3 +4,6 @@
 [submodule "gbarecomp"]
 	path = gbarecomp
 	url = https://github.com/mstan/gbarecomp.git
+[submodule "pokemon-olive"]
+	path = pokemon-olive
+	url = https://github.com/BoiledElectricity/pokemon-olive.git
