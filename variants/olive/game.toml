@@ -27,6 +27,20 @@ strict      = true
 [save]
 type = "flash1m"
 
+# ── Autosave ─────────────────────────────────────────────────────────
+# A rotating ring of savestates, entirely separate from the flash save in
+# [save] — this is the "I forgot to save" net, and a way back to just before
+# something went wrong. Loading one never touches your cartridge save.
+#
+# triggers are guest PCs; entering one snapshots at the next frame boundary.
+# They come from this build's own ELF, so they change whenever Olive is
+# rebuilt — re-import (see README.md) and refresh them together.
+[autosave]
+minutes = 20
+triggers = "0x08146398,0x0811376C,0x0802A104"
+#           HealPlayerParty  GiveMonToPlayer  AnimTask_LevelUpHealthBox
+#           (Pokémon Center) (caught a mon)   (level-up)
+
 [runtime]
 debug_port   = 19872
 window_title = "OliveRecomp"
