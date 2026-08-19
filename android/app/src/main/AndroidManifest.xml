@@ -18,15 +18,16 @@
         android:theme="@style/AppTheme"
         android:hardwareAccelerated="true">
 
-        <!-- A 20:9 panel against the GBA's 3:2: "fit" keeps the aspect and
-             leaves wide side bars, "stretch" fills the screen, "zoom" fills by
-             cropping top and bottom. -->
+        <!-- Fill a 20:9 panel without distorting anything: render a 356x160
+             view rather than stretching 240x160. 356 scaled to 1080 tall is
+             2403px, so it covers a 2400px panel with the aspect intact and
+             the extra width is real world, not a smeared 240.
+             "fit" is then correct-aspect by construction; "stretch" and
+             "zoom" remain available for other panels. -->
         <meta-data android:name="SDL_ENV.GBARECOMP_PRESENT_MODE"
-                   android:value="stretch" />
-
-        <!-- TEMPORARY widescreen experiment - revert before committing. -->
-        <meta-data android:name="SDL_ENV.GBARECOMP_WS_WIP" android:value="1" />
-        <meta-data android:name="SDL_ENV.GBARECOMP_VIEW_WIDTH" android:value="384" />
+                   android:value="fit" />
+        <meta-data android:name="SDL_ENV.GBARECOMP_VIEW_WIDTH"
+                   android:value="356" />
 
         <activity
             android:name="com.mstan.frlgrecomp.GbaRecompActivity"

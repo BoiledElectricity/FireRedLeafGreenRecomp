@@ -27,6 +27,19 @@ strict      = true
 [save]
 type = "flash1m"
 
+# ── Widescreen ───────────────────────────────────────────────────────
+# Guest addresses for the expanded-view margin path. Olive is its own binary,
+# so none of these match FireRed's — and main.cpp is shared by every variant,
+# which is why they belong here rather than there. They move on every Olive
+# rebuild; re-import refreshes them (see README.md).
+[widescreen]
+draw_metatile = 0x080A8BA4   # DrawMetatileAt
+tilemap_ptrs  = 0x03006018   # gBGTilemapBuffers1
+mapheader     = 0x02027004   # gMapHeader
+curcoords     = 0x02021A9C   # gObjectEvents[0].currentCoords
+gmain         = 0x03001CB0   # gMain (callback2 at +4)
+cb2_overworld = 0x080F8440   # CB2_Overworld
+
 # ── Autosave ─────────────────────────────────────────────────────────
 # A snapshot every few minutes, rotating across three slots. Entirely separate
 # from the flash save in [save]: this is an offline backup to rebuild from if
