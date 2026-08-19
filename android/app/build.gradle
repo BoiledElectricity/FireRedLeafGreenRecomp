@@ -64,6 +64,16 @@ android {
                 }
             }
         }
+        olive {
+            dimension 'game'
+            applicationId 'com.mstan.frlgrecomp.olive'
+            externalNativeBuild {
+                cmake {
+                    targets 'OliveRecomp'
+                    arguments '-DGBAGAME_VARIANT=olive'
+                }
+            }
+        }
     }
 
     signingConfigs {

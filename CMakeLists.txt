@@ -207,7 +207,7 @@ add_gba_variant(FireRedRecomp   firered   19852 "FireRedRecomp"
 # Olive — a pokefirered decomp fork. Its symbols come from the mod's own ELF,
 # so boundaries are exact instead of discovered.
 add_gba_variant(OliveRecomp     olive     19872 "OliveRecomp"
-    "Pokemon Olive" "4f1bfd063ad9abe3d2a817dcc90311a9e368e49d" 0x9E4111BE)
+    "Pokemon Olive" "d0787f16f30dd50df15d2af51ba9c6ea840f2588" 0xEC7386BB)
 
 # LeafGreen — rev0 / v1.0, sha1 574fa542… (definitive build, matches FireRed
 # v1.0; rev1 7862c67b work archived in ../../../_gen3_leafgreen_rev1_archive/).
