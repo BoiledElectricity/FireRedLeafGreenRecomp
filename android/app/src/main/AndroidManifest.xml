@@ -26,8 +26,8 @@
              "zoom" remain available for other panels. -->
         <meta-data android:name="SDL_ENV.GBARECOMP_PRESENT_MODE"
                    android:value="fit" />
-        <meta-data android:name="SDL_ENV.GBARECOMP_VIEW_WIDTH"
-                   android:value="356" />
+        <meta-data android:name="SDL_ENV.GBARECOMP_RESIZE_VIEW"
+                   android:value="1" />
 
         <activity
             android:name="com.mstan.frlgrecomp.GbaRecompActivity"

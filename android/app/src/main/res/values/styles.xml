@@ -1,4 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="AppTheme" parent="@android:style/Theme.NoTitleBar.Fullscreen" />
+    <style name="AppTheme" parent="@android:style/Theme.NoTitleBar.Fullscreen">
+        <!-- Draw into the cutout/notch strip too; without this the window stops
+             short of the panel and a black band is left along one edge. -->
+        <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>
+    </style>
 </resources>

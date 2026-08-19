@@ -105,6 +105,13 @@ int main(int argc, char** argv) {
     // 512 is the hardware ceiling for a 64-tile-wide background, and the
     // widest the PPU's expanded path can address. A 20:9 handheld wants ~356.
     opts.max_view_width = 512;
+    // Adaptive view: derive the logical width from the live window aspect
+    // instead of a fixed number. A phone's usable window is not its panel —
+    // system insets took a 2400x1080 device down to 2288x950 — so any width
+    // hardcoded from the spec sheet still leaves bars.
+    opts.resize_driven_view = true;
+    opts.max_resize_view_width = 512;
+    opts.launcher_expose_adaptive_view = true;
     opts.launcher_expose_widescreen = false;
     // Only the overworld has a world to widen into. Everywhere else — title,
     // menus, battles, the attract demo — the field background is a 32-tile
