@@ -146,3 +146,19 @@ variants/*/symbols/*_typed.txt
 # README showcase screenshots (override the *.png ignore above)
 !docs/screenshots/
 !docs/screenshots/*.png
+
+# Runtime diagnostics written next to the working directory on a run
+recomp_coverage_*.json
+recomp_master_misses_*.toml.frag
+hang_trace.csv
+hang_fp_tail.csv
+
+# Launcher icons (override the *.png ignore above)
+!android/app/src/*/res/mipmap-*/*.png
+
+# Android build outputs
+android/.gradle/
+android/build/
+android/app/build/
+android/app/.cxx/
+android/local.properties

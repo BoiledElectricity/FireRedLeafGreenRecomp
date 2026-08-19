@@ -46,6 +46,13 @@
 #include "game_launcher_boot.h"
 #endif
 
+#if defined(__ANDROID__)
+// Redirects main() to SDL_main, which is what SDLActivity looks up in this
+// shared object. Android passes no argv; the runtime resolves BIOS/ROM from
+// the app's external files directory.
+#include <SDL_main.h>
+#endif
+
 namespace {
 
 void print_usage() {
@@ -90,6 +97,13 @@ int main(int argc, char** argv) {
                                ? GBARECOMP_BOXART
                                : nullptr;
     opts.launcher_game_config = GBARECOMP_DEFAULT_GAME_CONFIG;  // prefill ROM/BIOS
+
+    // Expanded-view capability only. The default width stays 240, so this
+    // changes nothing until a user asks for a wider one with --view-width /
+    // GBARECOMP_VIEW_WIDTH. Margin content comes from the Pokemon Step C
+    // sidecar, which is still WIP and needs GBARECOMP_WS_WIP=1.
+    opts.max_view_width = 384;
+    opts.launcher_expose_widescreen = false;
 
 #if defined(GBAGAME_RECOMP_UI)
     std::vector<std::string> args(argv, argv + argc);

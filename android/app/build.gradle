@@ -1,0 +1,79 @@
+apply plugin: 'com.android.application'
+
+// The SDL2 Java shim must come from the same checkout the native build links,
+// so it is read straight out of the engine's vendored SDL2.
+def sdl2Java = '../../gbarecomp/third_party/SDL2/android-project/app/src/main/java'
+
+android {
+    namespace 'com.mstan.frlgrecomp'
+    compileSdk 35
+    ndkVersion '28.2.13676358'
+
+    defaultConfig {
+        minSdk 24
+        targetSdk 34
+        versionCode 1
+        versionName '0.0.1'
+
+        ndk {
+            // 64-bit only: the generated corpus is large enough that a second
+            // ABI doubles build time for hardware that no longer ships.
+            abiFilters 'arm64-v8a'
+        }
+        externalNativeBuild {
+            cmake {
+                arguments '-DANDROID_STL=c++_shared'
+            }
+        }
+    }
+
+    externalNativeBuild {
+        cmake {
+            path '../../CMakeLists.txt'
+            version '3.31.6'
+        }
+    }
+
+    flavorDimensions += 'game'
+    productFlavors {
+        firered {
+            dimension 'game'
+            applicationId 'com.mstan.frlgrecomp.firered'
+            externalNativeBuild {
+                cmake {
+                    targets 'FireRedRecomp'
+                    arguments '-DGBAGAME_VARIANT=firered'
+                }
+            }
+        }
+        leafgreen {
+            dimension 'game'
+            applicationId 'com.mstan.frlgrecomp.leafgreen'
+            externalNativeBuild {
+                cmake {
+                    targets 'LeafGreenRecomp'
+                    arguments '-DGBAGAME_VARIANT=leafgreen'
+                }
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+        }
+    }
+
+    sourceSets {
+        main.java.srcDirs += sdl2Java
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    lint {
+        abortOnError false
+    }
+}

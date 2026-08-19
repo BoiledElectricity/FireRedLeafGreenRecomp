@@ -40,7 +40,9 @@ add_subdirectory("${GBARECOMP_ROOT}" gbarecomp_build EXCLUDE_FROM_ALL)
 # verify_rom_hash — refuses to launch a game with an unknown ROM. Shared
 # across variants (it takes the ROM path + expected sha1 as arguments).
 # ─────────────────────────────────────────────────────────────────────
-add_executable(verify_rom_hash tools/verify_rom_hash/main.cpp)
+if(NOT ANDROID)
+    add_executable(verify_rom_hash tools/verify_rom_hash/main.cpp)
+endif()
 
 # ─────────────────────────────────────────────────────────────────────
 # add_gba_variant(<target> <name> <port> <win_title> <game_name> <sha1>
@@ -61,9 +63,28 @@ function(add_gba_variant TARGET NAME PORT WIN_TITLE GAME_NAME ROM_SHA1 ROM_CRC32
         "${VARIANT_DIR}/generated/*.c"
         "${VARIANT_DIR}/generated/*.cpp")
 
-    add_executable(${TARGET}
-        src/main.cpp
-        ${VARIANT_GENERATED})
+    # Before gba_recompile has run, generated/ holds no dispatch table. Link
+    # the engine's empty one so the scaffold still builds end to end.
+    set(VARIANT_SCAFFOLD_SOURCES "")
+    if(NOT VARIANT_GENERATED)
+        set(VARIANT_SCAFFOLD_SOURCES
+            "${GBARECOMP_ROOT}/tools/bios_smoke/dispatch_stub.cpp")
+        message(STATUS
+            "${NAME}: generated/ empty — scaffold build (no cart dispatch table)")
+    endif()
+
+    if(ANDROID)
+        # SDLActivity loads libSDL2.so then this library, and calls SDL_main.
+        add_library(${TARGET} SHARED
+            src/main.cpp
+            ${VARIANT_GENERATED}
+            ${VARIANT_SCAFFOLD_SOURCES})
+    else()
+        add_executable(${TARGET}
+            src/main.cpp
+            ${VARIANT_GENERATED}
+            ${VARIANT_SCAFFOLD_SOURCES})
+    endif()
 
     # Keep the very large generated guest translation units at a bounded
     # optimization/debug-info cost. gba_recompile emits deterministic
@@ -83,15 +104,25 @@ function(add_gba_variant TARGET NAME PORT WIN_TITLE GAME_NAME ROM_SHA1 ROM_CRC32
         "${GBARECOMP_ROOT}/src/debug"
         src)
 
-    target_link_libraries(${TARGET} PRIVATE
-        # --start-group lets ld re-iterate the gbarecomp static libs to
-        # resolve their mutual references.
-        "-Wl,--start-group"
-        gbarecomp_runtime
-        gbarecomp_debug
-        gbarecomp_gba
-        gbarecomp_armv4t
-        "-Wl,--end-group")
+    if(APPLE)
+        # Apple's ld has no --start-group; it resolves archive cycles on its
+        # own, so the libraries are listed plainly.
+        target_link_libraries(${TARGET} PRIVATE
+            gbarecomp_runtime
+            gbarecomp_debug
+            gbarecomp_gba
+            gbarecomp_armv4t)
+    else()
+        target_link_libraries(${TARGET} PRIVATE
+            # --start-group lets ld re-iterate the gbarecomp static libs to
+            # resolve their mutual references.
+            "-Wl,--start-group"
+            gbarecomp_runtime
+            gbarecomp_debug
+            gbarecomp_gba
+            gbarecomp_armv4t
+            "-Wl,--end-group")
+    endif()
 
     target_compile_definitions(${TARGET} PRIVATE
         GBARECOMP_DEFAULT_DEBUG_PORT=${PORT}
@@ -139,7 +170,13 @@ endfunction()
 # touch the giant generated/*.c TU flags — only main.cpp (gated on
 # GBAGAME_RECOMP_UI) and launcher_boot.cpp know the launcher exists.
 # ─────────────────────────────────────────────────────────────────────
-option(GBAGAME_RECOMP_UI "Build the recomp-ui pre-boot launcher" ON)
+if(ANDROID)
+    set(GBAGAME_RECOMP_UI_DEFAULT OFF)
+else()
+    set(GBAGAME_RECOMP_UI_DEFAULT ON)
+endif()
+option(GBAGAME_RECOMP_UI "Build the recomp-ui pre-boot launcher"
+       ${GBAGAME_RECOMP_UI_DEFAULT})
 if(GBAGAME_RECOMP_UI)
     include(${CMAKE_CURRENT_SOURCE_DIR}/recomp-ui/recomp_ui.cmake)
     add_library(game_launcher_ui STATIC src/game_launcher_boot.cpp)
