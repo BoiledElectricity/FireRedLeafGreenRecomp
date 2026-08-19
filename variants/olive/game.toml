@@ -28,18 +28,12 @@ strict      = true
 type = "flash1m"
 
 # ── Autosave ─────────────────────────────────────────────────────────
-# A rotating ring of savestates, entirely separate from the flash save in
-# [save] — this is the "I forgot to save" net, and a way back to just before
-# something went wrong. Loading one never touches your cartridge save.
-#
-# triggers are guest PCs; entering one snapshots at the next frame boundary.
-# They come from this build's own ELF, so they change whenever Olive is
-# rebuilt — re-import (see README.md) and refresh them together.
+# A snapshot every few minutes, rotating across three slots. Entirely separate
+# from the flash save in [save]: this is an offline backup to rebuild from if
+# a save is lost or corrupted, not something the game or the player interacts
+# with. Restoring one never touches your cartridge save.
 [autosave]
-minutes = 20
-triggers = "0x08146398,0x0811376C,0x0802A104"
-#           HealPlayerParty  GiveMonToPlayer  AnimTask_LevelUpHealthBox
-#           (Pokémon Center) (caught a mon)   (level-up)
+minutes = 5
 
 [runtime]
 debug_port   = 19872
