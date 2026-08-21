@@ -17,6 +17,7 @@
 // from game.toml. Hashes are verified before any code runs.
 
 #include <cstdio>
+#include <cstdlib>
 #include <cstring>
 #include <string>
 #include <vector>
@@ -104,6 +105,27 @@ int main(int argc, char** argv) {
     // sidecar, which is still WIP and needs GBARECOMP_WS_WIP=1.
     // 512 is the hardware ceiling for a 64-tile-wide background, and the
     // widest the PPU's expanded path can address. A 20:9 handheld wants ~356.
+#ifdef GBARECOMP_TTS_PCS
+    // Read field text aloud, for a player who cannot read yet. Baked in per
+    // variant; game.toml can still override where it is reachable.
+    {
+        const char* p = GBARECOMP_TTS_PCS;
+        while (*p) {
+            char* end = nullptr;
+            unsigned long v = std::strtoul(p, &end, 0);
+            if (end == p) break;
+            int reg = 0;
+            if (*end == ':') { reg = std::atoi(end + 1); while (*end && *end != ',') ++end; }
+            opts.tts_message_pcs.push_back(
+                gbarecomp::TtsHook{static_cast<std::uint32_t>(v), reg});
+            p = (*end == ',') ? end + 1 : end;
+        }
+    }
+#ifdef GBARECOMP_TTS_PRINTERS
+    opts.tts_printers_addr = GBARECOMP_TTS_PRINTERS;
+#endif
+#endif
+
     opts.max_view_width = 512;
     // Adaptive view: derive the logical width from the live window aspect
     // instead of a fixed number. A phone's usable window is not its panel —

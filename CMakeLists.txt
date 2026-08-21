@@ -58,6 +58,11 @@ endif()
 #   wiring. game.toml is selected at runtime via the compile-def below.
 # ─────────────────────────────────────────────────────────────────────
 function(add_gba_variant TARGET NAME PORT WIN_TITLE GAME_NAME ROM_SHA1 ROM_CRC32)
+    # Optional 8th arg: comma-separated guest PCs whose entry means a field
+    # message is being shown. Baked in rather than read from game.toml because
+    # Android has no usable working directory to resolve that path against.
+    set(VARIANT_TTS_PCS "${ARGV7}")
+    set(VARIANT_TTS_PRINTERS "${ARGV8}")
     set(VARIANT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/variants/${NAME}")
     if(EXISTS "${VARIANT_DIR}/generated/recompiled.cpp")
         message(FATAL_ERROR
@@ -138,6 +143,14 @@ function(add_gba_variant TARGET NAME PORT WIN_TITLE GAME_NAME ROM_SHA1 ROM_CRC32
         GBARECOMP_BUILTIN_SHA1="${ROM_SHA1}"
         GBARECOMP_BUILTIN_CRC32=${ROM_CRC32}
         GBARECOMP_BUILTIN_REGION="USA")
+    if(VARIANT_TTS_PCS)
+        target_compile_definitions(${TARGET} PRIVATE
+            GBARECOMP_TTS_PCS="${VARIANT_TTS_PCS}")
+        if(VARIANT_TTS_PRINTERS)
+            target_compile_definitions(${TARGET} PRIVATE
+                GBARECOMP_TTS_PRINTERS=${VARIANT_TTS_PRINTERS})
+        endif()
+    endif()
 
     if(GBAGAME_RECOMP_UI)
         target_link_libraries(${TARGET} PRIVATE game_launcher_ui)
@@ -202,12 +215,14 @@ endif()
 
 # FireRed  — rev0, sha1 41cb23d8…
 add_gba_variant(FireRedRecomp   firered   19852 "FireRedRecomp"
-    "Pokemon FireRed (USA)"  "41cb23d8dccc8ebd7c649cd8fbb58eeace6e2fdc" 0xDD88761C)
+    "Pokemon FireRed (USA)"  "41cb23d8dccc8ebd7c649cd8fbb58eeace6e2fdc" 0xDD88761C
+    "0x0806943C,0x080694A4,0x080F6CD0:2" 0x02020034)
 
 # Olive — a pokefirered decomp fork. Its symbols come from the mod's own ELF,
 # so boundaries are exact instead of discovered.
 add_gba_variant(OliveRecomp     olive     19872 "OliveRecomp"
-    "Pokemon Olive" "d0787f16f30dd50df15d2af51ba9c6ea840f2588" 0xEC7386BB)
+    "Pokemon Olive" "d0787f16f30dd50df15d2af51ba9c6ea840f2588" 0xEC7386BB
+    "0x080B3848,0x080B38F0" 0x0203E854)
 
 # LeafGreen — rev0 / v1.0, sha1 574fa542… (definitive build, matches FireRed
 # v1.0; rev1 7862c67b work archived in ../../../_gen3_leafgreen_rev1_archive/).

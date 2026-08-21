@@ -45,6 +45,22 @@ type = "flash1m"          # one of: sram | flash512 | flash1m | eeprom
 # ── Runtime ─────────────────────────────────────────────────────────
 # Each variant gets a distinct debug_port so multiple runners coexist:
 #   firered 19852 · leafgreen 19862 · ruby 19872 · sapphire 19882 · emerald 19892
+# ── Read aloud ───────────────────────────────────────────────────────
+# Guest functions that show a field message — people, signs, and the
+# popups sharing that path. Entering one is the cue to speak it, for a
+# player who cannot read yet. Battle text uses a different function and
+# is deliberately absent. Addresses move on a rebuild; re-import refreshes
+# them. GBARECOMP_TTS=0 silences it without a rebuild.
+[tts]
+# sTextPrinters: lets speech follow the page the box is drawing,
+# instead of reading a whole multi-page message at once.
+# Who is speaking: the object event being talked to picks the voice.
+object_events = 0x02036E38
+selected_object = 0x03005074
+printers = 0x02020034
+message_pcs = "0x0806943C,0x080694A4,0x080F6CD0:2"
+# ShowFieldMessage, FromBuffer, AddTextPrinterParameterized2 (string in r2)
+
 [runtime]
 debug_port    = 19852
 window_title  = "FireRedRecomp"

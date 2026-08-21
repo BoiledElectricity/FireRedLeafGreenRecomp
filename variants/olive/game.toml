@@ -48,6 +48,22 @@ cb2_overworld = 0x080F8440   # CB2_Overworld
 [autosave]
 minutes = 5
 
+# ── Read aloud ───────────────────────────────────────────────────────
+# Guest functions that show a field message — people, signs, and the
+# popups sharing that path. Entering one is the cue to speak it, for a
+# player who cannot read yet. Battle text uses a different function and
+# is deliberately absent. Addresses move on a rebuild; re-import refreshes
+# them. GBARECOMP_TTS=0 silences it without a rebuild.
+[tts]
+# sTextPrinters: lets speech follow the page the box is drawing,
+# instead of reading a whole multi-page message at once.
+# Who is speaking: the object event being talked to picks the voice.
+object_events = 0x02021A9C
+selected_object = 0x03006294
+printers = 0x0203E854
+message_pcs = "0x080B3848,0x080B38F0,0x080F2124:2"
+# ShowFieldMessage, FromBuffer, AddTextPrinterParameterized2 (string in r2)
+
 [runtime]
 debug_port   = 19872
 window_title = "OliveRecomp"
